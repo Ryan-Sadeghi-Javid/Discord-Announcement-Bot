@@ -1,15 +1,15 @@
-const DiscordJS = require('discord.js')
+const {Client, GatewayIntentBits} = require('discord.js')
 const WOKCommands = require('wokcommands')
-const path = require('path')
 const dotenv = require('dotenv').config({path: __dirname + '/.env'});
+const path = require('path')
 
-const { Intents } = DiscordJS
-
-const client = new DiscordJS.Client({
+const client = new Client({
   intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-  ],
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMessageReactions
+    ]
 })
 
 client.on('ready', () => {
@@ -19,4 +19,6 @@ client.on('ready', () => {
   })
 })
 
-client.login(process.env.TOKEN)
+// client.login(process.env.TOKEN)
+
+client.login('OTk4MDA1MDg1Mzk5NDI5MjUy.Gqx_s4.WfusmrlGVF01Lgesvrnl02fUJDGbeeHzTpxxzA');

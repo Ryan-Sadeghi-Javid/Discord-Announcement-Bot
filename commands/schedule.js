@@ -1,20 +1,57 @@
 const { MessageCollector } = require('discord.js')
 const momentTimezone = require('moment-timezone')
-const { off } = require('npm')
+
+const scheduledSchema = require('../models/scheduled-schema')
 
 module.exports = {
-    requiredPermissions: ['ADMINSTRATOR'],
+    requiredPermissions: ['ADMINISTRATOR'],
     expectedArgs: '<Channel tag> <YYYY/MM/DD> <HH:MM> <"AM" or "PM"> <Timezone>',
 
     // If user enters any other quantity of arugments, the bot will then show the user the correct syntax
     maxArgs: 5,
     minArgs: 5,
+    category: 'testing',
+    description: 'joe',
+    name: 'schedule',
 
-    init: () => {},
-    callback: async ({message, args}) {
+    init: (client) => {
+        const checkForPosts = async () => {
+            const query = {
+              date: {
+                $lte: Date.now(),
+              },
+            }
+      
+            const results = await scheduledSchema.find(query)
+      
+            for (const post of results) {
+              const { guildId, channelId, content } = post
+      
+              const guild = await client.guilds.fetch(guildId)
+              if (!guild) {
+                continue
+              }
+      
+              const channel = guild.channels.cache.get(channelId)
+              if (!channel) {
+                continue
+              }
+      
+              channel.send(content)
+            }
+      
+            await scheduledSchema.deleteMany(query)
+      
+            setTimeout(checkForPosts, 1000 * 10)
+          }
+      
+          checkForPosts()
+    },
+
+    callback: async ({message, args}) => {
         const {mentions, guild, channel} = message
 
-        const targetChannel = mentions.channels.first()
+        const targetChannel = mentions.channels.first();
         if(!targetChannel){
             message.reply('Please add the desired channel you want to send your message in')
             return
@@ -45,7 +82,7 @@ module.exports = {
         message.reply('Please send the message you would like to schedule!')
 
         const filter = (newMessage) => {
-            return newMessage.author.id == message.author.id;
+            return newMessage.author.id === message.author.id;
         }
 
         const collector = new MessageCollector(channel, filter, {
@@ -64,9 +101,12 @@ module.exports = {
 
             message.reply('Your message has been scheduled.')
 
-            // TODO: Save to the database
+            await new scheduledSchema({
+                date: targetDate.valueOf(),
+                content: collectedMessage.content,
+                guildId: guild.id,
+                channelId: targetChannel.id,
+            }).save()
         })
-
-
-    }
+    },
 }
